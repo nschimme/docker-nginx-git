@@ -25,4 +25,4 @@ COPY 99_start.sh /etc/my_init.d/
 
 ENV GIT_POSTBUFFER 1048576
 
-CMD ["sh", "99_start.sh"]
+CMD ["sh", "/etc/my_init.d/99_start.sh"]

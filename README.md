@@ -4,16 +4,6 @@
 
 Docker image for a Git HTTP server on Nginx.
 
-This image is based on the [phusion/baseimage](https://github.com/phusion/baseimage-docker)
-base image for solving the PID 1 problem of Docker and for other factors.
-
-For more informations check these links:
-
-*   [Docker and the PID 1 zombie reaping problem](https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/)
-
-*   [Baseimage-docker](http://phusion.github.io/baseimage-docker/)
-the base image used in this image.
-
 ## Installation
 
 Download the image from the docker's hub:

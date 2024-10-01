@@ -1,7 +1,7 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 RUN apt-get -qq update && \
-    apt-get -qq --no-install-recommends install gettext-base nginx fcgiwrap git && \
+    apt-get -qq --no-install-recommends install gettext-base nginx fcgiwrap spawn-fcgi git && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN useradd nginx

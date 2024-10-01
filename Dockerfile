@@ -1,9 +1,8 @@
-FROM debian:11.4-slim
+FROM debian:bullseye-slim
 
-RUN apt-get -q -q update && \
-    apt-get -y install gettext-base nginx fcgiwrap git
-
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get -qq update && \
+    apt-get -qq --no-install-recommends install gettext-base nginx fcgiwrap git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 RUN useradd nginx
 

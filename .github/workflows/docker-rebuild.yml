@@ -1,0 +1,79 @@
+name: Docker Base Image Check
+
+on:
+  schedule:
+    # Check daily at midnight
+    - cron: "0 0 * * *"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  BASE_IMAGE: debian:bookworm-slim  # Update if base image changes
+
+jobs:
+  check-base-image:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Pull the base image and get its digest
+      - name: Pull base image and get digest
+        run: |
+          BASE_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.BASE_IMAGE }})
+          echo "Base image digest: $BASE_IMAGE_DIGEST"
+          echo "::set-output name=base_image_digest::$BASE_IMAGE_DIGEST"
+
+      # Fetch the current image from the registry and get its base image digest
+      - name: Fetch current image and get its base image digest
+        run: |
+          CURRENT_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker pull $CURRENT_IMAGE
+          CURRENT_BASE_DIGEST=$(docker inspect --format='{{index .Config.Image}}' $CURRENT_IMAGE)
+          echo "Current image base digest: $CURRENT_BASE_DIGEST"
+          echo "::set-output name=current_base_digest::$CURRENT_BASE_DIGEST"
+
+      # Compare the base image digest with the one in the current image
+      - name: Compare base image digests
+        id: compare
+        run: |
+          if [ "${{ steps.pull.outputs.base_image_digest }}" != "${{ steps.fetch.outputs.current_base_digest }}" ]; then
+            echo "Base image has changed!"
+            echo "::set-output name=rebuild::true"
+          else
+            echo "Base image has not changed."
+            echo "::set-output name=rebuild::false"
+          fi
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        if: steps.compare.outputs.rebuild == 'true'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      # Build and push the image if the base image has changed
+      - name: Build and push Docker image
+        if: steps.compare.outputs.rebuild == 'true'
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

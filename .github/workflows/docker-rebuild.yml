@@ -33,6 +33,7 @@ jobs:
       # Pull the base image and get its digest
       - name: Pull base image and get digest
         run: |
+          docker pull ${{ env.BASE_IMAGE }}
           BASE_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.BASE_IMAGE }})
           echo "Base image digest: $BASE_IMAGE_DIGEST"
           echo "::set-output name=base_image_digest::$BASE_IMAGE_DIGEST"

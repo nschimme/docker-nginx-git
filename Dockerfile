@@ -23,5 +23,6 @@ COPY index.html /usr/share/nginx/html/
 COPY 99_start.sh /etc/my_init.d/
 
 ENV GIT_POSTBUFFER 1048576
+ENV HOME /srv/git
 
 CMD ["sh", "/etc/my_init.d/99_start.sh"]

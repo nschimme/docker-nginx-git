@@ -61,6 +61,10 @@ jobs:
             echo "::set-output name=rebuild::false"
           fi
 
+      - name: Checkout repository
+        if: steps.compare.outputs.rebuild == 'true'
+        uses: actions/checkout@v3
+
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata

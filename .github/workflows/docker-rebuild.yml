@@ -37,7 +37,7 @@ jobs:
           docker pull ${{ env.BASE_IMAGE }}
           BASE_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.BASE_IMAGE }})
           echo "Base image digest: $BASE_IMAGE_DIGEST"
-          echo "::set-output name=base_image_digest::$BASE_IMAGE_DIGEST"
+          echo "base_image_digest=$BASE_IMAGE_DIGEST" >> $GITHUB_OUTPUT
 
       # Fetch the current image from the registry and get its base image digest
       - name: Fetch current image and get its base image digest
@@ -45,9 +45,9 @@ jobs:
         run: |
           CURRENT_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker pull $CURRENT_IMAGE
-          CURRENT_BASE_DIGEST=$(docker inspect --format='{{index .Config.Image}}' $CURRENT_IMAGE)
+          CURRENT_BASE_DIGEST=$(docker inspect --format='{{index .Config.Image}}' ${{ env.IMAGE_NAME }})
           echo "Current image base digest: $CURRENT_BASE_DIGEST"
-          echo "::set-output name=current_base_digest::$CURRENT_BASE_DIGEST"
+          echo "current_base_digest=$CURRENT_BASE_DIGEST" >> $GITHUB_OUTPUT
 
       # Compare the base image digest with the one in the current image
       - name: Compare base image digests
@@ -55,10 +55,10 @@ jobs:
         run: |
           if [ "${{ steps.pull.outputs.base_image_digest }}" != "${{ steps.fetch.outputs.current_base_digest }}" ]; then
             echo "Base image has changed!"
-            echo "::set-output name=rebuild::true"
+            echo "rebuild=true" >> $GITHUB_OUTPUT
           else
             echo "Base image has not changed."
-            echo "::set-output name=rebuild::false"
+            echo "rebuild=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout repository

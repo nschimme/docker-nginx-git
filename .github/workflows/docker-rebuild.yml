@@ -45,7 +45,7 @@ jobs:
         run: |
           CURRENT_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker pull $CURRENT_IMAGE
-          CURRENT_BASE_DIGEST=$(docker inspect --format='{{index .Config.Image}}' ${{ env.IMAGE_NAME:latest }})
+          CURRENT_BASE_DIGEST=$(docker inspect --format='{{index .Config.Image}}' ${{ env.IMAGE_NAME }}:latest)
           echo "Current image base digest: $CURRENT_BASE_DIGEST"
           echo "current_base_digest=$CURRENT_BASE_DIGEST" >> $GITHUB_OUTPUT
 

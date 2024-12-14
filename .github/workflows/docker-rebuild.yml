@@ -8,7 +8,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  BASE_IMAGE: debian:bookworm-slim  # Update if base image changes
 
 jobs:
   check-base-image:
@@ -30,45 +29,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Pull the base image and get its digest
-      - name: Pull base image and get digest
-        id: pull
-        run: |
-          docker pull ${{ env.BASE_IMAGE }}
-          BASE_IMAGE_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.BASE_IMAGE }})
-          echo "Base image digest: $BASE_IMAGE_DIGEST"
-          echo "base_image_digest=$BASE_IMAGE_DIGEST" >> $GITHUB_OUTPUT
-
-      # Fetch the current image from the registry and get its base image digest
-      - name: Fetch current image and get its base image digest
-        id: fetch
-        run: |
-          CURRENT_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker pull $CURRENT_IMAGE
-          CURRENT_BASE_DIGEST=$(docker inspect --format='{{.Config.Image}}' $CURRENT_IMAGE)
-          echo "Current image base digest: $CURRENT_BASE_DIGEST"
-          echo "current_base_digest=$CURRENT_BASE_DIGEST" >> $GITHUB_OUTPUT
-
-      # Compare the base image digest with the one in the current image
-      - name: Compare base image digests
-        id: compare
-        run: |
-          if [ "${{ steps.pull.outputs.base_image_digest }}" != "${{ steps.fetch.outputs.current_base_digest }}" ]; then
-            echo "Base image has changed!"
-            echo "rebuild=true" >> $GITHUB_OUTPUT
-          else
-            echo "Base image has not changed."
-            echo "rebuild=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout repository
-        if: steps.compare.outputs.rebuild == 'true'
         uses: actions/checkout@v3
+
+      - name: Check if update available
+        id: check
+        uses: lucacome/docker-image-update-checker@v2.0.0
+        with:
+          base-image: debian:bookworm-slim
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          platforms: linux/amd64
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
-        if: steps.compare.outputs.rebuild == 'true'
+        if: steps.baseupdatecheck.outputs.needs-updating == 'true'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -76,7 +51,7 @@ jobs:
 
       # Build and push the image if the base image has changed
       - name: Build and push Docker image
-        if: steps.compare.outputs.rebuild == 'true'
+        if: steps.baseupdatecheck.outputs.needs-updating == 'true'
         id: build-and-push
         uses: docker/build-push-action@v5
         with:
